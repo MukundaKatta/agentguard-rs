@@ -1,0 +1,29 @@
+[package]
+name = "agentguard"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["MukundaKatta"]
+description = "Network egress firewall for AI agent tools. Declarative domain allowlist; throws on violation. Optional reqwest-middleware integration."
+license = "MIT"
+repository = "https://github.com/MukundaKatta/agentguard-rs"
+homepage = "https://github.com/MukundaKatta/agentguard-rs"
+documentation = "https://docs.rs/agentguard"
+readme = "README.md"
+keywords = ["llm", "agent", "security", "sandbox", "allowlist"]
+categories = ["network-programming", "api-bindings"]
+
+[features]
+default = []
+# Enable a reqwest-middleware impl that blocks calls to disallowed hosts.
+reqwest = ["dep:reqwest", "dep:reqwest-middleware", "dep:async-trait", "dep:http", "dep:anyhow"]
+
+[dependencies]
+url = "2"
+thiserror = "2"
+
+reqwest = { version = "0.12", optional = true, default-features = false }
+reqwest-middleware = { version = "0.4", optional = true }
+async-trait = { version = "0.1", optional = true }
+http = { version = "1", optional = true }
+anyhow = { version = "1", optional = true }
