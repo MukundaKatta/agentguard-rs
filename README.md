@@ -76,3 +76,13 @@ JS users: see [@mukundakatta/agentguard](https://www.npmjs.com/package/@mukundak
 ## License
 
 MIT
+
+## Repository Health
+
+This repository includes a dependency-free health check for core documentation, metadata, and CI wiring. Run it locally before publishing changes:
+
+```sh
+python3 scripts/check_repository_health.py
+```
+
+The same check runs in GitHub Actions on pushes and pull requests.
