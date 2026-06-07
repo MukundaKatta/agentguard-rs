@@ -27,6 +27,14 @@ enum Rule {
     SubdomainsOf(String),
 }
 
+/// Canonicalize a host for comparison: lowercase and drop a single trailing
+/// dot. `example.com.` is the fully-qualified form of `example.com` and
+/// resolves to the same servers, so the two must match the same rules.
+fn normalize_host(host: &str) -> String {
+    let host = host.to_lowercase();
+    host.strip_suffix('.').unwrap_or(&host).to_string()
+}
+
 /// Declarative allowlist of domains an agent's tools may fetch.
 ///
 /// By default only `http` and `https` schemes pass. Add domain rules with
@@ -52,7 +60,7 @@ impl Allowlist {
     /// subdomain are matched only by their literal string; for broader
     /// matching use [`subdomains_of`](Self::subdomains_of).
     pub fn domain(mut self, host: impl Into<String>) -> Self {
-        self.rules.push(Rule::Exact(host.into().to_lowercase()));
+        self.rules.push(Rule::Exact(normalize_host(&host.into())));
         self
     }
 
@@ -60,7 +68,7 @@ impl Allowlist {
     /// permits `acme.com`, `api.acme.com`, `a.b.acme.com`, …).
     pub fn subdomains_of(mut self, apex: impl Into<String>) -> Self {
         self.rules
-            .push(Rule::SubdomainsOf(apex.into().to_lowercase()));
+            .push(Rule::SubdomainsOf(normalize_host(&apex.into())));
         self
     }
 
@@ -70,7 +78,10 @@ impl Allowlist {
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
-        self.allowed_schemes = schemes.into_iter().map(|s| s.into().to_lowercase()).collect();
+        self.allowed_schemes = schemes
+            .into_iter()
+            .map(|s| s.into().to_lowercase())
+            .collect();
         self
     }
 
@@ -93,8 +104,12 @@ impl Allowlist {
     }
 
     /// True if `host` matches any rule. Lower-level than `check` (skips URL parsing).
+    ///
+    /// The host is canonicalized before matching: it is lowercased and a single
+    /// trailing dot is removed, so the fully-qualified form `example.com.`
+    /// matches the same rules as `example.com`.
     pub fn is_allowed_host(&self, host: &str) -> bool {
-        let host = host.to_lowercase();
+        let host = normalize_host(host);
         for rule in &self.rules {
             match rule {
                 Rule::Exact(d) => {
@@ -103,9 +118,7 @@ impl Allowlist {
                     }
                 }
                 Rule::SubdomainsOf(apex) => {
-                    if host == *apex
-                        || host.ends_with(&format!(".{apex}"))
-                    {
+                    if host == *apex || host.ends_with(&format!(".{apex}")) {
                         return true;
                     }
                 }
